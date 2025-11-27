@@ -2,82 +2,103 @@
 
 set -e
 
-echo "[*] Creating ~/venvs directory..."
-mkdir -p ~/venvs
+VENV_HOME="$HOME/venvs"
 
-########################################
-# NetExec VENV
-########################################
-echo "[*] Creating NetExec venv..."
-python3 -m venv ~/venvs/nxc
-source ~/venvs/nxc/bin/activate
+activate() {
+    source "$VENV_HOME/$1/bin/activate"
+    echo "[*] Activated venv: $1"
+}
 
-echo "[*] Installing deps for NetExec..."
-pip install --upgrade pip setuptools wheel
-pip install pyopenssl==23.2.0 cryptography==41.0.3
-pip install git+https://github.com/Pennyw0rth/NetExec.git
+install_nxc() {
+    echo ""
+    echo "[*] Installing NetExec into nxc venv..."
+    activate nxc
 
-deactivate
+    # Fix OpenSSL compatibility
+    pip install --upgrade pip setuptools wheel
+    pip install "pyopenssl==24.0.0" "cryptography==42.0.8"
 
+    pip install git+https://github.com/Pennyw0rth/NetExec.git
 
-########################################
-# Certipy VENV
-########################################
-echo "[*] Creating Certipy venv..."
-python3 -m venv ~/venvs/certipy
-source ~/venvs/certipy/bin/activate
+    deactivate
+}
 
-echo "[*] Installing Certipy..."
-pip install --upgrade pip setuptools wheel
-pip install certipy-ad
+install_impacket() {
+    echo ""
+    echo "[*] Installing Impacket into impacket venv..."
+    activate impacket
 
-deactivate
+    pip install --upgrade pip setuptools wheel
+    pip install git+https://github.com/fortra/impacket.git
 
+    deactivate
+}
 
-########################################
-# Impacket VENV
-########################################
-echo "[*] Creating Impacket venv..."
-python3 -m venv ~/venvs/impacket
-source ~/venvs/impacket/bin/activate
+install_certipy() {
+    echo ""
+    echo "[*] Installing Certipy into certipy venv..."
+    activate certipy
 
-echo "[*] Installing Impacket..."
-pip install --upgrade pip setuptools wheel
-pip install git+https://github.com/fortra/impacket
+    pip install --upgrade pip setuptools wheel
 
-deactivate
+    # pin correct dependencies to avoid breakage
+    pip install "pyopenssl==24.0.0" "cryptography==42.0.8"
 
+    pip install certipy-ad
 
-########################################
-# PKINITtools VENV
-########################################
-echo "[*] Creating PKINITtools venv..."
-python3 -m venv ~/venvs/pkinit
-source ~/venvs/pkinit/bin/activate
+    deactivate
+}
 
-echo "[*] Installing PKINITtools..."
-pip install --upgrade pip setuptools wheel
-pip install git+https://github.com/dirkjanm/PKINITtools
+install_bloodhound() {
+    echo ""
+    echo "[*] Installing BloodHound.py into bloodhound venv..."
+    activate bloodhound
 
-deactivate
+    pip install --upgrade pip setuptools wheel
+    pip install bloodhound
 
+    deactivate
+}
 
-########################################
-# SHELL ALIASES
-########################################
-echo "[*] Adding aliases to ~/.zshrc and ~/.bashrc..."
+install_pkinit() {
+    echo ""
+    echo "[*] Installing PKINITtools into pkinit venv..."
+    activate pkinit
 
-ALIASES='
-# Red Team Tool Virtual Environments
-alias nxc="source ~/venvs/nxc/bin/activate && nxc"
-alias certipy="source ~/venvs/certipy/bin/activate && certipy"
-alias imp="source ~/venvs/impacket/bin/activate"
-alias pkinit="source ~/venvs/pkinit/bin/activate"
-'
+    pip install --upgrade pip setuptools wheel cryptography pyopenssl
 
-echo "$ALIASES" >> ~/.zshrc
-echo "$ALIASES" >> ~/.bashrc
+    git clone https://github.com/dirkjanm/PKINITtools.git /tmp/PKINITtools
+    cd /tmp/PKINITtools
+    pip install .
 
-echo "[+] Done!"
-echo "[+] Run: source ~/.zshrc (or ~/.bashrc)"
-echo "[+] Your environments are ready."
+    cd -
+    deactivate
+}
+
+install_misc() {
+    echo ""
+    echo "[*] Installing miscellaneous common pentest libraries..."
+    activate misc
+
+    pip install --upgrade pip setuptools wheel
+    pip install rich tqdm ipython requests ldap3 pyasn1
+
+    deactivate
+}
+
+echo "[+] Starting full tool installation..."
+
+install_nxc
+install_impacket
+install_certipy
+install_bloodhound
+install_pkinit
+install_misc
+
+echo ""
+echo "[+] All tools installed successfully!"
+echo ""
+echo "Use them like:"
+echo "  source ~/venvs/nxc/bin/activate && nxc smb 10.10.10.5 -u user -p pass"
+echo ""
+echo "You're ready to go."
